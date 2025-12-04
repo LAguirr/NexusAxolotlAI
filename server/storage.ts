@@ -1,37 +1,99 @@
-import { type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "crypto";
+import type { 
+  MissionType, 
+  EmotionType,
+  SubmissionResponse 
+} from "@shared/schema";
 
-// modify the interface with any CRUD methods
-// you might need
+export interface BaseSubmission {
+  id: string;
+  missionType: MissionType;
+  firstName: string;
+  lastName: string;
+  email: string;
+  message?: string;
+  emotionPreference: EmotionType;
+  aiThankYouMessage?: string;
+  createdAt: string;
+}
+
+export interface DonationSubmission extends BaseSubmission {
+  missionType: "don";
+  amount: number;
+  frequency: "ponctuel" | "mensuel" | "annuel";
+  customMessage?: string;
+}
+
+export interface VolunteerSubmission extends BaseSubmission {
+  missionType: "benevolat";
+  skills: string[];
+  availability: string;
+  motivation?: string;
+}
+
+export interface ContactSubmission extends BaseSubmission {
+  missionType: "contact";
+  subject: string;
+  category?: string;
+  priority?: string;
+  aiSummary?: string;
+}
+
+export interface InfoRequestSubmission extends BaseSubmission {
+  missionType: "informations";
+  requestType: string;
+  specificQuestion?: string;
+}
+
+export type Submission = 
+  | DonationSubmission 
+  | VolunteerSubmission 
+  | ContactSubmission 
+  | InfoRequestSubmission;
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createSubmission(data: Omit<Submission, "id" | "createdAt">): Promise<Submission>;
+  getSubmission(id: string): Promise<Submission | undefined>;
+  getAllSubmissions(): Promise<Submission[]>;
+  updateSubmissionAIMessage(id: string, message: string): Promise<Submission | undefined>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private submissions: Map<string, Submission>;
 
   constructor() {
-    this.users = new Map();
+    this.submissions = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async createSubmission(data: Omit<Submission, "id" | "createdAt">): Promise<Submission> {
+    const id = randomUUID();
+    const submission: Submission = {
+      ...data,
+      id,
+      createdAt: new Date().toISOString(),
+    } as Submission;
+    this.submissions.set(id, submission);
+    return submission;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getSubmission(id: string): Promise<Submission | undefined> {
+    return this.submissions.get(id);
+  }
+
+  async getAllSubmissions(): Promise<Submission[]> {
+    return Array.from(this.submissions.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateSubmissionAIMessage(id: string, message: string): Promise<Submission | undefined> {
+    const submission = this.submissions.get(id);
+    if (submission) {
+      submission.aiThankYouMessage = message;
+      this.submissions.set(id, submission);
+      return submission;
+    }
+    return undefined;
   }
 }
 
