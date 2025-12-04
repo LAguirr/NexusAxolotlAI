@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -27,6 +28,21 @@ const requestTypes = [
   { value: "evenements", label: "Événements et activités" },
   { value: "technique", label: "Questions techniques" },
   { value: "autre", label: "Autre demande" },
+];
+
+const firstNameSuggestions = [
+  "Alexandre", "Antoine", "Benjamin", "Camille", "Charlotte",
+  "David", "Emma", "François", "Gabriel", "Hugo",
+  "Isabelle", "Julie", "Kevin", "Laura", "Lucas",
+  "Marie", "Nicolas", "Olivier", "Pierre", "Quentin",
+  "Raphael", "Sophie", "Thomas", "Valentin", "Xavier",
+];
+
+const lastNameSuggestions = [
+  "Martin", "Bernard", "Dubois", "Thomas", "Robert",
+  "Richard", "Petit", "Durand", "Leroy", "Moreau",
+  "Simon", "Laurent", "Lefebvre", "Michel", "Garcia",
+  "David", "Bertrand", "Roux", "Vincent", "Fournier",
 ];
 
 export default function MissionInformations() {
@@ -135,9 +151,11 @@ export default function MissionInformations() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <Input 
+                            <AutocompleteInput 
                               placeholder="Ton prénom" 
-                              {...field}
+                              suggestions={firstNameSuggestions}
+                              value={field.value}
+                              onChange={field.onChange}
                               data-testid="input-firstname"
                             />
                           </FormControl>
@@ -152,9 +170,11 @@ export default function MissionInformations() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <Input 
+                            <AutocompleteInput 
                               placeholder="Ton nom" 
-                              {...field}
+                              suggestions={lastNameSuggestions}
+                              value={field.value}
+                              onChange={field.onChange}
                               data-testid="input-lastname"
                             />
                           </FormControl>

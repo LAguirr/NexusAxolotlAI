@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,6 +18,36 @@ import { EmotionSelector } from "@/components/emotion-selector";
 import { contactFormSchema, type ContactForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+const subjectSuggestions = [
+  "Question générale",
+  "Question sur les dons",
+  "Question sur le bénévolat",
+  "Demande de partenariat",
+  "Demande d'information",
+  "Demande de collaboration",
+  "Proposition de projet",
+  "Problème technique",
+  "Retour d'expérience",
+  "Réclamation",
+  "Suggestion d'amélioration",
+  "Autre demande",
+];
+
+const firstNameSuggestions = [
+  "Alexandre", "Antoine", "Benjamin", "Camille", "Charlotte",
+  "David", "Emma", "François", "Gabriel", "Hugo",
+  "Isabelle", "Julie", "Kevin", "Laura", "Lucas",
+  "Marie", "Nicolas", "Olivier", "Pierre", "Quentin",
+  "Raphael", "Sophie", "Thomas", "Valentin", "Xavier",
+];
+
+const lastNameSuggestions = [
+  "Martin", "Bernard", "Dubois", "Thomas", "Robert",
+  "Richard", "Petit", "Durand", "Leroy", "Moreau",
+  "Simon", "Laurent", "Lefebvre", "Michel", "Garcia",
+  "David", "Bertrand", "Roux", "Vincent", "Fournier",
+];
 
 export default function MissionContact() {
   const [, navigate] = useLocation();
@@ -118,9 +149,11 @@ export default function MissionContact() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <Input 
+                            <AutocompleteInput 
                               placeholder="Ton prénom" 
-                              {...field}
+                              suggestions={firstNameSuggestions}
+                              value={field.value}
+                              onChange={field.onChange}
                               data-testid="input-firstname"
                             />
                           </FormControl>
@@ -135,9 +168,11 @@ export default function MissionContact() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <Input 
+                            <AutocompleteInput 
                               placeholder="Ton nom" 
-                              {...field}
+                              suggestions={lastNameSuggestions}
+                              value={field.value}
+                              onChange={field.onChange}
                               data-testid="input-lastname"
                             />
                           </FormControl>
@@ -173,9 +208,11 @@ export default function MissionContact() {
                       <FormItem>
                         <FormLabel>Sujet</FormLabel>
                         <FormControl>
-                          <Input 
+                          <AutocompleteInput 
                             placeholder="De quoi souhaites-tu nous parler ?" 
-                            {...field}
+                            suggestions={subjectSuggestions}
+                            value={field.value}
+                            onChange={field.onChange}
                             data-testid="input-subject"
                           />
                         </FormControl>
