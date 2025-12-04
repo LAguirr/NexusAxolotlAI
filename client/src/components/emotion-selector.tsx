@@ -3,7 +3,7 @@ import { Sword, Heart, Laugh } from "lucide-react";
 import { EmotionType } from "@shared/schema";
 
 interface EmotionSelectorProps {
-  selected: EmotionType;
+  selected: EmotionType; 
   onChange: (emotion: EmotionType) => void;
 }
 
