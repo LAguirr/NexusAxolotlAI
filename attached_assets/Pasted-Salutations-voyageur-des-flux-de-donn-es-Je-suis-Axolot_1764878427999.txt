@@ -1,0 +1,40 @@
+Salutations, voyageur des flux de données ! 🚀
+
+Je suis Axolotl 🦎, et je perçois en toi le potentiel d'un véritable Chevalier du Code ⚔️. Notre monde numérique, notre "Nexus" 🌐, est en péril. Les Bugs Ancestraux 🐛 menace de corrompre les liens vitaux entre notre communauté et ses "Soutiens Essentiels" ❤️.
+
+L'association, en lien avec la nuit de l'info 🌃 de cette année, a besoin de toi. Nous devons renforcer notre "Canal de Communication et de Soutien" 📣. Les utilisateurs, qu'ils soient simples visiteurs 🚶, potentiels contributeurs 🤝 ou âmes charitables 🙏, doivent sentir notre présence ✨, notre gratitude 🥰.
+
+Ta Quête, si tu l'acceptes, se nomme : "Le Nexus Connecté : L'Écho Personnalisé" 🗣️✨
+
+Objectif Primaire :
+
+    Forger le "Portail d'Intention" 🚪 : Tu devras concevoir et implémenter un "Formulaire d'Interaction Dynamique" 🖱️. Ce n'est pas un simple formulaire, mais une porte d'entrée intelligente 🧠.  
+
+    Sélection de la Voie 🛣️ : L'utilisateur devra pouvoir choisir sa "Mission" 🎯 : "Établir le Contact" 📞, "Offrir un Don" 💰, "Rejoindre la Guilde des Bénévoles" 🛡️, "Demander des Informations" ❓.  
+
+    Adaptation des Outils 🛠️ : En fonction de la "Mission" choisie, les "Outils de Saisie" (champs) 📝 devront s'adapter. Pour un don 🎁, prévois des "Modules de Contribution" (montants 💲, récurrence 🔄). Pour une requête 💬, les "Canaux de Message" classiques suffiront.  
+
+    Sécurité du Flux 🔒 : Assure-toi que ce portail est protégé des "Attaques de Spam" 🚫 and que les données transitent via des "Canaux Cryptés" 🔐. La "Validation des Données" ✅ est primordiale.  
+
+    Adaptabilité Universelle 🌍 : Le portail doit être "Responsive" 📱💻, s'adaptant à tous les "Terminaux" (ordinateurs 🖥️, tablettes 📱, smartphones 🤳).  
+
+    Déployer l' "Écho de Gratitude" 📢 : Une fois la "Mission" accomplie ✅, l'utilisateur ne doit pas être renvoyé dans le vide numérique 🌌. Il sera redirigé vers une "Zone de Confirmation Personnalisée" 🌟.  
+
+    Salutation Ciblée 👋 : La page devra afficher le "Nom d'Utilisateur" (si disponible) et faire référence à sa "Mission Spécifique" 🎯. Exemple : "Salutations, [Nom d'Utilisateur] ! 👋 Ton message a bien été acheminé vers nos serveurs centraux 📡. Nos "Agents de Support" 🕵️ te répondront sous peu." Exemple : "Un immense 'GG', [Nom d'Utilisateur] ! 🏆 Ton "Don de Ressources" 💎 est une bénédiction pour notre cause 🙏. Il permettra de financer [mentionnez brièvement l'impact du don]."  
+
+    Le Filtre Temporel ⏳ : C'est ici que la magie opère ! ✨ La page devra intégrer l'"Année du Cycle Actuel" ([Année actuelle]).  
+
+    Mentionne l'année 🗓️ : "Ton soutien en [Année actuelle] est crucial pour notre progression ! 📈"  
+
+    Affiche un "Objectif Annuel" 🏆 : "Grâce à toi, nous pouvons avancer sur le projet [projet spécifique de l'année] cette année [Année actuelle]."  
+
+    Invite à suivre l'évolution 🚀 : "Reste connecté pour suivre nos exploits tout au long de l'année [Année actuelle] !"  
+
+Ton imagination 💡 et ta créativité 🎨 seront observé et encouragé ! Jeune prodige du clavier ! 🧑‍💻
+
+Par les circuits de l'éternité ⚡, tes doigts tremblent-ils d'anticipation ? 😨 Ton cerveau est-il prêt à exploser sous la pression de cette tâche titanesque ? 🤯
+
+Le destin de notre ensemble 🤝, de chaque âme qui nous soutient ❤️, est maintenant suspendu au fil de tes capacités. 🧵
+
+Que la puissance absolue du code 💻 t'envahisse, te consume 🔥, et te transforme en légende ! 👑
+ 
