@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Gift, Check } from "lucide-react";
+import { ArrowLeft, Gift, Check, Sparkles, Send } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { AIAvatar } from "@/components/ai-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EmotionSelector } from "@/components/emotion-selector";
+import { Badge } from "@/components/ui/badge";
 import { donationFormSchema, type DonationForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+interface DonationSuggestion {
+  suggestedAmount: number;
+  frequency: "ponctuel" | "mensuel" | "annuel";
+  reason: string;
+  message: string;
+}
 
 const presetAmounts = [5, 10, 25, 50, 100];
 
@@ -41,6 +49,42 @@ export default function MissionDon() {
   const { toast } = useToast();
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
   const [aiMessage, setAiMessage] = useState("Ah, une âme généreuse ! Ton don sera précieux pour notre cause. Choisis le montant qui te convient et ensemble, nous renforcerons le Nexus !");
+  const [suggestionInput, setSuggestionInput] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState<DonationSuggestion | null>(null);
+
+  const suggestionMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const response = await apiRequest("POST", "/api/ai/suggest-donation", { message });
+      return await response.json() as DonationSuggestion;
+    },
+    onSuccess: (data) => {
+      setAiSuggestion(data);
+      setAiMessage(data.message);
+    },
+    onError: () => {
+      toast({
+        title: "Suggestion indisponible",
+        description: "L'IA n'a pas pu analyser ta demande. Choisis un montant manuellement.",
+        variant: "destructive",
+      });
+      setAiMessage("Mes circuits sont un peu fatigués ! Choisis le montant qui te convient parmi les options ci-dessous.");
+    },
+  });
+
+  const handleAskSuggestion = () => {
+    if (!suggestionInput.trim()) return;
+    suggestionMutation.mutate(suggestionInput);
+  };
+
+  const applySuggestion = () => {
+    if (!aiSuggestion) return;
+    setSelectedPreset(null);
+    form.setValue("amount", aiSuggestion.suggestedAmount);
+    form.setValue("frequency", aiSuggestion.frequency);
+    setAiMessage(`Parfait ! J'ai configuré ton don de ${aiSuggestion.suggestedAmount}€ en ${aiSuggestion.frequency}. ${aiSuggestion.reason}`);
+    setAiSuggestion(null);
+    setSuggestionInput("");
+  };
 
   const form = useForm<DonationForm>({
     resolver: zodResolver(donationFormSchema),
@@ -192,6 +236,71 @@ export default function MissionDon() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Suggestion IA</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Dis-moi ta situation et je te suggère un montant adapté !
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={suggestionInput}
+                        onChange={(e) => setSuggestionInput(e.target.value)}
+                        placeholder="Ex: J'ai pas trop de budget ce mois-ci..."
+                        className="flex-1 text-sm"
+                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAskSuggestion())}
+                        data-testid="input-ai-suggestion"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        onClick={handleAskSuggestion}
+                        disabled={!suggestionInput.trim() || suggestionMutation.isPending}
+                        data-testid="button-ask-suggestion"
+                      >
+                        {suggestionMutation.isPending ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </motion.div>
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {aiSuggestion && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 p-3 bg-background rounded-md border"
+                      >
+                        <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-xs">
+                              {aiSuggestion.suggestedAmount}€
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {aiSuggestion.frequency}
+                            </Badge>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={applySuggestion}
+                            data-testid="button-apply-suggestion"
+                          >
+                            Appliquer
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{aiSuggestion.reason}</p>
+                      </motion.div>
+                    )}
+                  </div>
 
                   <div className="space-y-3">
                     <FormLabel>Montant du don</FormLabel>

@@ -4,6 +4,7 @@ import { Gift, Users, MessageSquare, HelpCircle } from "lucide-react";
 import { AIAvatar } from "@/components/ai-avatar";
 import { MissionCard } from "@/components/mission-card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AIChatWidget } from "@/components/ai-chat-widget";
 
 const missions = [
   {
@@ -126,6 +127,8 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      <AIChatWidget />
     </div>
   );
 }

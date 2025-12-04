@@ -149,3 +149,248 @@ Réponds en JSON avec ce format exact:
     };
   }
 }
+
+export async function analyzeUserIntent(userMessage: string): Promise<{
+  intent: "don" | "benevolat" | "contact" | "informations" | "unclear";
+  confidence: number;
+  suggestion: string;
+  redirectPath: string | null;
+}> {
+  const currentYear = new Date().getFullYear();
+  
+  if (!openai) {
+    return analyzeIntentFallback(userMessage);
+  }
+
+  const prompt = `Tu es Axolotl, l'assistant IA du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+
+Analyse le message de l'utilisateur et détermine son intention parmi ces missions:
+- don: L'utilisateur veut faire un don financier
+- benevolat: L'utilisateur veut devenir bénévole
+- contact: L'utilisateur veut envoyer un message/contacter l'équipe
+- informations: L'utilisateur veut des informations sur l'association
+- unclear: L'intention n'est pas claire
+
+Message de l'utilisateur: "${userMessage}"
+
+Réponds en JSON avec ce format exact:
+{
+  "intent": "don|benevolat|contact|informations|unclear",
+  "confidence": 0.0 à 1.0,
+  "suggestion": "Message court et engageant pour guider l'utilisateur vers la bonne section"
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 256,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const intent = result.intent || "unclear";
+    
+    const pathMap: Record<string, string | null> = {
+      don: "/mission/don",
+      benevolat: "/mission/benevolat",
+      contact: "/mission/contact",
+      informations: "/mission/informations",
+      unclear: null,
+    };
+
+    return {
+      intent,
+      confidence: result.confidence || 0.5,
+      suggestion: result.suggestion || "Dis-moi en quoi je peux t'aider !",
+      redirectPath: pathMap[intent],
+    };
+  } catch (error) {
+    console.error("OpenAI intent analysis error:", error);
+    return analyzeIntentFallback(userMessage);
+  }
+}
+
+function analyzeIntentFallback(message: string): {
+  intent: "don" | "benevolat" | "contact" | "informations" | "unclear";
+  confidence: number;
+  suggestion: string;
+  redirectPath: string | null;
+} {
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes("don") || lowerMessage.includes("argent") || lowerMessage.includes("aider financ") || lowerMessage.includes("contribuer") || lowerMessage.includes("soutenir")) {
+    return {
+      intent: "don",
+      confidence: 0.8,
+      suggestion: "Tu veux nous soutenir financièrement ? C'est génial ! Je t'ouvre la section Don.",
+      redirectPath: "/mission/don",
+    };
+  }
+  
+  if (lowerMessage.includes("bénévol") || lowerMessage.includes("rejoindre") || lowerMessage.includes("guilde") || lowerMessage.includes("compétence") || lowerMessage.includes("temps")) {
+    return {
+      intent: "benevolat",
+      confidence: 0.8,
+      suggestion: "Tu veux rejoindre notre équipe ? Super ! Je t'ouvre la section Bénévolat.",
+      redirectPath: "/mission/benevolat",
+    };
+  }
+  
+  if (lowerMessage.includes("question") || lowerMessage.includes("info") || lowerMessage.includes("savoir") || lowerMessage.includes("comment")) {
+    return {
+      intent: "informations",
+      confidence: 0.7,
+      suggestion: "Tu cherches des informations ? Je t'ouvre la section Demande d'infos.",
+      redirectPath: "/mission/informations",
+    };
+  }
+  
+  if (lowerMessage.includes("contact") || lowerMessage.includes("message") || lowerMessage.includes("parler") || lowerMessage.includes("écrire")) {
+    return {
+      intent: "contact",
+      confidence: 0.7,
+      suggestion: "Tu veux nous contacter ? Je t'ouvre la section Contact.",
+      redirectPath: "/mission/contact",
+    };
+  }
+  
+  return {
+    intent: "unclear",
+    confidence: 0.3,
+    suggestion: "Dis-moi ce que tu souhaites faire : faire un don, devenir bénévole, nous contacter, ou demander des informations ?",
+    redirectPath: null,
+  };
+}
+
+export async function suggestDonationAmount(userMessage: string): Promise<{
+  suggestedAmount: number;
+  frequency: "ponctuel" | "mensuel" | "annuel";
+  reason: string;
+  message: string;
+}> {
+  const currentYear = new Date().getFullYear();
+  
+  if (!openai) {
+    return suggestDonationFallback(userMessage);
+  }
+
+  const prompt = `Tu es Axolotl, l'assistant IA du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+
+L'utilisateur veut faire un don et a dit: "${userMessage}"
+
+Analyse son message et suggère un montant adapté à sa situation.
+Indices à considérer:
+- S'il mentionne un budget limité → suggérer 5-10€
+- S'il semble motivé mais indécis → suggérer 25€
+- S'il semble très enthousiaste → suggérer 50-100€
+- S'il mentionne la régularité → suggérer mensuel
+
+Réponds en JSON avec ce format exact:
+{
+  "suggestedAmount": nombre entre 5 et 100,
+  "frequency": "ponctuel|mensuel|annuel",
+  "reason": "Thème court lié au Nexus/Nuit de l'Info ${currentYear}",
+  "message": "Message personnalisé encourageant de 1-2 phrases"
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 256,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    return {
+      suggestedAmount: result.suggestedAmount || 10,
+      frequency: result.frequency || "ponctuel",
+      reason: result.reason || `Soutien au Nexus ${currentYear}`,
+      message: result.message || "Chaque contribution compte !",
+    };
+  } catch (error) {
+    console.error("OpenAI donation suggestion error:", error);
+    return suggestDonationFallback(userMessage);
+  }
+}
+
+function suggestDonationFallback(message: string): {
+  suggestedAmount: number;
+  frequency: "ponctuel" | "mensuel" | "annuel";
+  reason: string;
+  message: string;
+} {
+  const lowerMessage = message.toLowerCase();
+  const currentYear = new Date().getFullYear();
+  
+  if (lowerMessage.includes("pas trop") || lowerMessage.includes("peu") || lowerMessage.includes("petit") || lowerMessage.includes("budget")) {
+    return {
+      suggestedAmount: 5,
+      frequency: "ponctuel",
+      reason: `Premier pas dans le Nexus ${currentYear}`,
+      message: "Même 5€ font une vraie différence ! Chaque contribution renforce notre communauté.",
+    };
+  }
+  
+  if (lowerMessage.includes("régulier") || lowerMessage.includes("mensuel") || lowerMessage.includes("chaque mois")) {
+    return {
+      suggestedAmount: 10,
+      frequency: "mensuel",
+      reason: `Gardien mensuel du Nexus ${currentYear}`,
+      message: "Un don mensuel nous permet de planifier à long terme. Tu deviens un véritable pilier !",
+    };
+  }
+  
+  if (lowerMessage.includes("généreux") || lowerMessage.includes("beaucoup") || lowerMessage.includes("maximum")) {
+    return {
+      suggestedAmount: 100,
+      frequency: "ponctuel",
+      reason: `Chevalier du Code ${currentYear}`,
+      message: "Quelle générosité ! Avec ce don, tu deviens un véritable Chevalier du Code !",
+    };
+  }
+  
+  return {
+    suggestedAmount: 25,
+    frequency: "ponctuel",
+    reason: `Soutien au Nexus ${currentYear}`,
+    message: "25€ est un excellent choix pour soutenir nos projets ! Tu fais partie des bâtisseurs du Nexus.",
+  };
+}
+
+export async function chatWithAssistant(userMessage: string, context?: string): Promise<string> {
+  const currentYear = new Date().getFullYear();
+  
+  if (!openai) {
+    return "Je suis Axolotl, ton guide dans le Nexus ! Malheureusement, mes circuits IA sont temporairement hors ligne. Tu peux quand même explorer les différentes missions ci-dessous.";
+  }
+
+  const prompt = `Tu es Axolotl, l'assistant IA amical et futuriste du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+
+Ton rôle:
+- Guider les utilisateurs vers la bonne mission (don, bénévolat, contact, informations)
+- Répondre de façon concise et engageante (max 2-3 phrases)
+- Utiliser un vocabulaire tech/futuriste mais accessible
+- Être chaleureux et encourageant
+
+${context ? `Contexte: ${context}` : ""}
+
+Message de l'utilisateur: "${userMessage}"
+
+Réponds directement sans guillemets ni formatage.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [{ role: "user", content: prompt }],
+      max_completion_tokens: 150,
+    });
+
+    return response.choices[0].message.content || "Dis-moi comment je peux t'aider !";
+  } catch (error) {
+    console.error("OpenAI chat error:", error);
+    return "Mes circuits ont un petit bug ! Essaie de reformuler ta demande ou explore les missions ci-dessous.";
+  }
+}

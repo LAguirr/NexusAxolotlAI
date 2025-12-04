@@ -2,7 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { submissionFormSchema } from "@shared/schema";
-import { generateThankYouMessage, classifyContactRequest } from "./openai";
+import { 
+  generateThankYouMessage, 
+  classifyContactRequest, 
+  analyzeUserIntent, 
+  suggestDonationAmount,
+  chatWithAssistant 
+} from "./openai";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -97,6 +103,54 @@ export async function registerRoutes(
       res.json(response);
     } catch (error) {
       console.error("Get all submissions error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/ai/analyze-intent", async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const result = await analyzeUserIntent(message);
+      res.json(result);
+    } catch (error) {
+      console.error("Intent analysis error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/ai/suggest-donation", async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const result = await suggestDonationAmount(message);
+      res.json(result);
+    } catch (error) {
+      console.error("Donation suggestion error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/ai/chat", async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const response = await chatWithAssistant(message, context);
+      res.json({ response });
+    } catch (error) {
+      console.error("Chat error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
