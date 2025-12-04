@@ -22,11 +22,12 @@ export function MissionCard({ title, description, icon: Icon, onClick, delay = 0
     >
       <Card
         onClick={onClick}
-        className="group cursor-pointer h-full min-h-[220px] bg-card border-2 border-transparent hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-xl relative overflow-hidden"
+        className="group cursor-pointer h-full min-h-[220px] bg-card/80 backdrop-blur-sm border-2 border-primary/10 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-primary/10 relative overflow-hidden futuristic-card"
         data-testid={testId}
       >
-        <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full border-4 border-gray-400/30 group-hover:border-gray-300/50 transition-all duration-500 group-hover:rotate-45" />
-        <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full border-2 border-gray-500/20 group-hover:border-gray-400/40 transition-all duration-700 group-hover:-rotate-12" />
+        <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full border-4 border-gray-400/30 group-hover:border-primary/50 transition-all duration-500 group-hover:rotate-45" />
+        <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full border-2 border-gray-500/20 group-hover:border-accent/40 transition-all duration-700 group-hover:-rotate-12" />
+        <div className="absolute -bottom-8 -left-8 w-20 h-20 rounded-full bg-primary/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <CardContent className="flex flex-col items-center justify-center h-full p-6 sm:p-8 text-center gap-4 relative z-10">
           <motion.div
             className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center group-hover:from-primary/20 group-hover:to-accent/20 transition-colors duration-300"

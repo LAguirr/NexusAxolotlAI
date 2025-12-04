@@ -40,7 +40,10 @@ export default function Home() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="absolute inset-0 cyber-grid opacity-30" />
+      <div className="absolute inset-0 circuit-pattern opacity-20" />
+      
       <AIAvatar 
         message="Salutations, voyageur des flux de données ! Je suis Axolotl, ton guide dans le Nexus. Quelle mission choisis-tu ?"
       />
@@ -50,8 +53,10 @@ export default function Home() {
       </header>
 
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 grid-pattern opacity-50" />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-background" />
+        <div className="absolute inset-0 grid-pattern opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-accent/5 to-background" />
+        <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 rounded-full bg-accent/5 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -65,13 +70,13 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="inline-block mb-6"
           >
-            <span className="px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
-              Le Nexus Connecté - {new Date().getFullYear()}
+            <span className="px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/30 glow-border backdrop-blur-sm">
+              <span className="opacity-60">[</span> Le Nexus Connecté - {new Date().getFullYear()} <span className="opacity-60">]</span>
             </span>
           </motion.div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            <span className="gradient-text">L'Écho Personnalisé</span>
+            <span className="holographic">L'Écho Personnalisé</span>
           </h1>
           
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -113,10 +118,11 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto text-center">
+      <footer className="py-8 px-4 border-t border-primary/20 relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
+        <div className="max-w-6xl mx-auto text-center relative z-10">
           <p className="text-sm text-muted-foreground">
-            Le Nexus Connecté - Propulsé par la puissance du code depuis {new Date().getFullYear()}
+            <span className="text-primary/80">///</span> Le Nexus Connecté - Propulsé par la puissance du code depuis {new Date().getFullYear()} <span className="text-primary/80">///</span>
           </p>
         </div>
       </footer>
