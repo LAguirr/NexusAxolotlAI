@@ -11,6 +11,8 @@ import MissionContact from "@/pages/mission-contact";
 import MissionInformations from "@/pages/mission-informations";
 import Confirmation from "@/pages/confirmation";
 import NotFound from "@/pages/not-found";
+import { ChatProvider } from "@/lib/chat-context";
+import { AIChatWidget } from "@/components/ai-chat-widget";
 
 function Router() {
   return (
@@ -26,12 +28,20 @@ function Router() {
   );
 }
 
+import { Footer } from "@/components/footer";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <ChatProvider>
+          <Toaster />
+          <div className="flex flex-col min-h-screen">
+            <Router />
+            <Footer />
+          </div>
+          <AIChatWidget />
+        </ChatProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -12,13 +12,14 @@ import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { AIAvatar } from "@/components/ai-avatar";
+import { AIChatWidget } from "@/components/ai-chat-widget";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EmotionSelector } from "@/components/emotion-selector";
 import { Badge } from "@/components/ui/badge";
 import { donationFormSchema, type DonationForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useChat } from "@/lib/chat-context";
 
 interface DonationSuggestion {
   suggestedAmount: number;
@@ -47,58 +48,85 @@ const lastNameSuggestions = [
 export default function MissionDon() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { setMessage, language } = useChat();
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
-  const [aiMessage, setAiMessage] = useState("Ah, une âme généreuse ! Ton don sera précieux pour notre cause. Choisis le montant qui te convient et ensemble, nous renforcerons le Nexus !");
+
+  const initialMessages = {
+    fr: "Ah, une âme généreuse ! Ton don sera précieux pour notre cause. Choisis le montant qui te convient et ensemble, nous renforcerons le Nexus !",
+    en: "Ah, a generous soul! Your donation will be precious to our cause. Choose the amount that suits you and together, we will strengthen the Nexus!"
+  };
+
+  const [aiMessage, setAiMessage] = useState(initialMessages[language]);
   const [suggestionInput, setSuggestionInput] = useState("");
   const [aiSuggestion, setAiSuggestion] = useState<DonationSuggestion | null>(null);
 
-  const suggestionMutation = useMutation({
-    mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/ai/suggest-donation", { message });
-      return await response.json() as DonationSuggestion;
-    },
-    onSuccess: (data) => {
-      setAiSuggestion(data);
-      setAiMessage(data.message);
-    },
-    onError: () => {
-      toast({
-        title: "Suggestion indisponible",
-        description: "L'IA n'a pas pu analyser ta demande. Choisis un montant manuellement.",
-        variant: "destructive",
-      });
-      setAiMessage("Mes circuits sont un peu fatigués ! Choisis le montant qui te convient parmi les options ci-dessous.");
-    },
-  });
+  // Update message when language changes
+  useEffect(() => {
+    setAiMessage(initialMessages[language]);
+  }, [language]);
 
-  const handleAskSuggestion = () => {
-    if (!suggestionInput.trim()) return;
-    suggestionMutation.mutate(suggestionInput);
-  };
-
-  const applySuggestion = () => {
-    if (!aiSuggestion) return;
-    setSelectedPreset(null);
-    form.setValue("amount", aiSuggestion.suggestedAmount);
-    form.setValue("frequency", aiSuggestion.frequency);
-    setAiMessage(`Parfait ! J'ai configuré ton don de ${aiSuggestion.suggestedAmount}€ en ${aiSuggestion.frequency}. ${aiSuggestion.reason}`);
-    setAiSuggestion(null);
-    setSuggestionInput("");
-  };
+  useEffect(() => {
+    setMessage(aiMessage);
+  }, [aiMessage, setMessage]);
 
   const form = useForm<DonationForm>({
     resolver: zodResolver(donationFormSchema),
     defaultValues: {
-      missionType: "don",
       firstName: "",
       lastName: "",
       email: "",
       amount: 0,
       frequency: "ponctuel",
       customMessage: "",
-      emotionPreference: "bienveillant",
+      emotionPreference: "joy",
     },
   });
+
+  const handlePresetClick = (amount: number) => {
+    form.setValue("amount", amount);
+    setSelectedPreset(amount);
+  };
+
+  const suggestionMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai/suggest-donation", {
+        message: prompt,
+        language
+      });
+      return await response.json() as DonationSuggestion;
+    },
+    onSuccess: (data) => {
+      setAiSuggestion(data);
+      setAiMessage(data.message);
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur de suggestion IA",
+        description: error.message || "Impossible d'obtenir une suggestion pour le moment.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAskSuggestion = () => {
+    if (suggestionInput.trim()) {
+      suggestionMutation.mutate(suggestionInput);
+    }
+  };
+
+  const applySuggestion = () => {
+    if (aiSuggestion) {
+      form.setValue("amount", aiSuggestion.suggestedAmount);
+      form.setValue("frequency", aiSuggestion.frequency);
+      setSelectedPreset(aiSuggestion.suggestedAmount);
+      setAiSuggestion(null); // Clear suggestion after applying
+      setSuggestionInput(""); // Clear input after applying
+      toast({
+        title: "Suggestion appliquée",
+        description: "Le montant et la fréquence suggérés ont été appliqués.",
+      });
+    }
+  };
 
   const submitMutation = useMutation({
     mutationFn: async (data: DonationForm) => {
@@ -106,40 +134,28 @@ export default function MissionDon() {
       return await response.json() as SubmissionResponse;
     },
     onSuccess: (data) => {
-      navigate(`/confirmation/${data.id}`);
-    },
-    onError: () => {
       toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la soumission. Veuillez réessayer.",
+        title: "Don confirmé !",
+        description: data.message,
+      });
+      navigate("/confirmation");
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur lors de la confirmation",
+        description: error.message || "Une erreur est survenue. Veuillez réessayer.",
         variant: "destructive",
       });
     },
   });
 
-  const handlePresetClick = (amount: number) => {
-    setSelectedPreset(amount);
-    form.setValue("amount", amount);
-    
-    if (amount <= 10) {
-      setAiMessage("Chaque contribution compte ! Même les plus petits dons créent de grandes ondes dans le Nexus.");
-    } else if (amount <= 50) {
-      setAiMessage("Généreux voyageur ! Avec cette contribution, tu aides vraiment notre mission à progresser.");
-    } else {
-      setAiMessage("Par les circuits de l'éternité ! Un don de cette envergure est une bénédiction pour notre cause. Tu es un véritable Chevalier du Code !");
-    }
-  };
-
   const onSubmit = (data: DonationForm) => {
-    setAiMessage("Traitement de ton don en cours... Les serveurs du Nexus s'activent !");
     submitMutation.mutate(data);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <AIAvatar message={aiMessage} isTyping={submitMutation.isPending} />
-
-      <header className="fixed top-4 left-4 z-40 flex items-center gap-2">
+      <header className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-background/80 backdrop-blur-sm border-b">
         <Button
           variant="ghost"
           size="icon"
@@ -185,8 +201,8 @@ export default function MissionDon() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton prénom" 
+                            <AutocompleteInput
+                              placeholder="Ton prénom"
                               suggestions={firstNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -204,8 +220,8 @@ export default function MissionDon() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton nom" 
+                            <AutocompleteInput
+                              placeholder="Ton nom"
                               suggestions={lastNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -225,9 +241,9 @@ export default function MissionDon() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="ton.email@exemple.com" 
+                          <Input
+                            type="email"
+                            placeholder="ton.email@exemple.com"
                             {...field}
                             data-testid="input-email"
                           />
@@ -324,8 +340,8 @@ export default function MissionDon() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               placeholder="Ou entre un montant personnalisé"
                               {...field}
                               onChange={(e) => {
@@ -379,7 +395,7 @@ export default function MissionDon() {
                       <FormItem>
                         <FormLabel>Message (optionnel)</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Un message pour accompagner ton don..."
                             className="resize-none"
                             {...field}

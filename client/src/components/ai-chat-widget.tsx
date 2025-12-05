@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useChat } from "@/lib/chat-context";
+
+import axolotlImage from "@assets/generated_images/axolotl_ai_robot_mascot.png";
 
 interface ChatMessage {
   id: string;
@@ -26,13 +29,50 @@ interface IntentResponse {
   redirectPath: string | null;
 }
 
+const translations = {
+  fr: {
+    welcome: "Salut voyageur ! Explique-moi ce que tu veux faire et je te guide vers la bonne mission.",
+    title: "Axolotl - Assistant IA",
+    placeholder: "Décris ce que tu veux faire...",
+    example: 'Exemple: "Je veux aider mais j\'ai pas trop d\'argent"',
+    error: "Oups, mes circuits ont eu un bug ! Essaie de reformuler ou choisis directement une mission ci-dessous.",
+    connectionErrorTitle: "Connexion IA interrompue",
+    connectionErrorDesc: "Réessaie ou choisis une mission directement.",
+    actions: {
+      don: "Ouvrir la section Don",
+      benevolat: "Rejoindre la Guilde",
+      contact: "Ouvrir le formulaire Contact",
+      informations: "Demander des Infos",
+      explore: "Explorer"
+    }
+  },
+  en: {
+    welcome: "Hello traveler! Explain what you want to do and I'll guide you to the right mission.",
+    title: "Axolotl - AI Assistant",
+    placeholder: "Describe what you want to do...",
+    example: 'Example: "I want to help but I don\'t have much money"',
+    error: "Oops, my circuits had a bug! Try rephrasing or choose a mission directly below.",
+    connectionErrorTitle: "AI Connection Interrupted",
+    connectionErrorDesc: "Retry or choose a mission directly.",
+    actions: {
+      don: "Open Donation Section",
+      benevolat: "Join the Guild",
+      contact: "Open Contact Form",
+      informations: "Request Info",
+      explore: "Explore"
+    }
+  }
+};
+
 export function AIChatWidget() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, setIsOpen, message, language } = useChat();
+  const t = translations[language];
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       type: "ai",
-      content: "Salut voyageur ! Explique-moi ce que tu veux faire et je te guide vers la bonne mission.",
+      content: t.welcome,
     },
   ]);
   const [input, setInput] = useState("");
@@ -46,11 +86,28 @@ export function AIChatWidget() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isOpen]);
+
+  // Reset welcome message when language changes
+  useEffect(() => {
+    setMessages((prev) => {
+      // If the first message is the welcome message, update it
+      if (prev.length > 0 && prev[0].id === "welcome") {
+        return [
+          {
+            ...prev[0],
+            content: t.welcome,
+          },
+          ...prev.slice(1),
+        ];
+      }
+      return prev;
+    });
+  }, [language, t.welcome]);
 
   const analyzeIntentMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/ai/analyze-intent", { message });
+      const response = await apiRequest("POST", "/api/ai/analyze-intent", { message, language });
       return await response.json() as IntentResponse;
     },
     onSuccess: (data) => {
@@ -67,8 +124,8 @@ export function AIChatWidget() {
     },
     onError: () => {
       toast({
-        title: "Connexion IA interrompue",
-        description: "Réessaie ou choisis une mission directement.",
+        title: t.connectionErrorTitle,
+        description: t.connectionErrorDesc,
         variant: "destructive",
       });
       setMessages((prev) => [
@@ -76,7 +133,7 @@ export function AIChatWidget() {
         {
           id: Date.now().toString(),
           type: "ai",
-          content: "Oups, mes circuits ont eu un bug ! Essaie de reformuler ou choisis directement une mission ci-dessous.",
+          content: t.error,
         },
       ]);
     },
@@ -84,12 +141,12 @@ export function AIChatWidget() {
 
   const getActionLabel = (intent: string): string => {
     const labels: Record<string, string> = {
-      don: "Ouvrir la section Don",
-      benevolat: "Rejoindre la Guilde",
-      contact: "Ouvrir le formulaire Contact",
-      informations: "Demander des Infos",
+      don: t.actions.don,
+      benevolat: t.actions.benevolat,
+      contact: t.actions.contact,
+      informations: t.actions.informations,
     };
-    return labels[intent] || "Explorer";
+    return labels[intent] || t.actions.explore;
   };
 
   const handleSend = () => {
@@ -113,7 +170,8 @@ export function AIChatWidget() {
   };
 
   const handleAction = (path: string) => {
-    setIsOpen(false);
+    // We don't close the chat here anymore to keep it persistent
+    // setIsOpen(false); 
     navigate(path);
   };
 
@@ -131,14 +189,14 @@ export function AIChatWidget() {
             <Card className="overflow-hidden shadow-2xl border-2 border-primary/20">
               <div className="bg-gradient-to-r from-primary to-accent p-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-white" />
-                  <span className="font-bold text-white text-sm">Axolotl - Assistant IA</span>
+                  <Sparkles className="w-5 h-5 text-black" />
+                  <span className="font-bold text-black text-sm">{t.title}</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsOpen(false)}
-                  className="text-white hover:bg-white/20 h-7 w-7"
+                  className="text-black hover:bg-black/10 h-7 w-7"
                   data-testid="button-close-chat"
                 >
                   <X className="w-4 h-4" />
@@ -154,11 +212,10 @@ export function AIChatWidget() {
                     className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-lg p-3 ${
-                        msg.type === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
+                      className={`max-w-[85%] rounded-lg p-3 ${msg.type === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                        }`}
                     >
                       <p className="text-sm">{msg.content}</p>
                       {msg.action && (
@@ -200,7 +257,7 @@ export function AIChatWidget() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Décris ce que tu veux faire..."
+                    placeholder={t.placeholder}
                     className="flex-1 text-sm"
                     disabled={analyzeIntentMutation.isPending}
                     data-testid="input-chat-message"
@@ -215,7 +272,7 @@ export function AIChatWidget() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Exemple: "Je veux aider mais j'ai pas trop d'argent"
+                  {t.example}
                 </p>
               </div>
             </Card>
@@ -223,43 +280,51 @@ export function AIChatWidget() {
         )}
       </AnimatePresence>
 
-      <motion.div
-        className="fixed bottom-4 right-4 z-50"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Button
-          size="lg"
-          onClick={() => setIsOpen(!isOpen)}
-          className="rounded-full h-14 w-14 shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 relative"
-          data-testid="button-open-chat"
-        >
-          <AnimatePresence mode="wait">
-            {isOpen ? (
+      <AnimatePresence>
+        {!isOpen && (
+          <div className="fixed bottom-4 right-4 z-50 flex items-end gap-3">
+            {message && (
               <motion.div
-                key="close"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
+                initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 10, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="speech-bubble relative max-w-xs sm:max-w-sm bg-card border-2 border-primary/30 rounded-2xl p-4 shadow-xl mb-4 mr-2"
+                data-testid="ai-speech-bubble"
               >
-                <X className="w-6 h-6" />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="open"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-              >
-                <MessageCircle className="w-6 h-6" />
+                <p className="text-sm sm:text-base text-card-foreground leading-relaxed">
+                  {message}
+                </p>
               </motion.div>
             )}
-          </AnimatePresence>
-          {!isOpen && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-          )}
-        </Button>
-      </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.5 }}
+              className="relative cursor-pointer"
+              onClick={() => setIsOpen(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              data-testid="button-open-chat"
+            >
+              <div className="w-20 h-20 rounded-full overflow-hidden ai-glow animate-float bg-gradient-to-br from-primary/20 to-accent/20 p-1">
+                <img
+                  src={axolotlImage}
+                  alt="Axolotl - Votre assistant IA"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+              <motion.div
+                className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

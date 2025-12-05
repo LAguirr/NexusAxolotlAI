@@ -3,7 +3,7 @@ import type { MissionType, EmotionType } from "@shared/schema";
 import type { Submission } from "./storage";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = process.env.OPENAI_API_KEY 
+const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
@@ -27,7 +27,7 @@ export async function generateThankYouMessage(submission: Submission): Promise<s
   const missionContext = missionContexts[submission.missionType];
 
   let specificDetails = "";
-  
+
   switch (submission.missionType) {
     case "don":
       specificDetails = `Montant du don: ${submission.amount}€, Fréquence: ${submission.frequency}.`;
@@ -90,7 +90,7 @@ Réponds uniquement avec le message de remerciement, sans guillemets ni formatag
 
 function getFallbackMessage(submission: Submission, year: number): string {
   const { firstName, missionType } = submission;
-  
+
   const fallbacks: Record<MissionType, string> = {
     don: `Merci infiniment ${firstName} ! Ton don renforce les fondations du Nexus en ${year}. Chaque contribution nous rapproche de notre objectif et permet à notre communauté de continuer à innover ensemble.`,
     benevolat: `Bienvenue dans la guilde, ${firstName} ! En ${year}, le Nexus a besoin de talents comme le tien. Tes compétences seront précieuses pour notre communauté et nous avons hâte de collaborer avec toi.`,
@@ -150,34 +150,35 @@ Réponds en JSON avec ce format exact:
   }
 }
 
-export async function analyzeUserIntent(userMessage: string): Promise<{
+export async function analyzeUserIntent(userMessage: string, language: string = 'fr'): Promise<{
   intent: "don" | "benevolat" | "contact" | "informations" | "unclear";
   confidence: number;
   suggestion: string;
   redirectPath: string | null;
 }> {
   const currentYear = new Date().getFullYear();
-  
+
   if (!openai) {
-    return analyzeIntentFallback(userMessage);
+    return analyzeIntentFallback(userMessage, language);
   }
 
-  const prompt = `Tu es Axolotl, l'assistant IA du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+  const prompt = `You are Axolotl, the AI assistant of the Connected Nexus for the Night of Info ${currentYear}.
 
-Analyse le message de l'utilisateur et détermine son intention parmi ces missions:
-- don: L'utilisateur veut faire un don financier
-- benevolat: L'utilisateur veut devenir bénévole
-- contact: L'utilisateur veut envoyer un message/contacter l'équipe
-- informations: L'utilisateur veut des informations sur l'association
-- unclear: L'intention n'est pas claire
+Analyze the user's message and determine their intent among these missions:
+- don: The user wants to make a financial donation
+- benevolat: The user wants to become a volunteer
+- contact: The user wants to send a message/contact the team
+- informations: The user wants information about the association
+- unclear: The intent is not clear
 
-Message de l'utilisateur: "${userMessage}"
+User message: "${userMessage}"
+Target language for response: "${language}"
 
-Réponds en JSON avec ce format exact:
+Respond in JSON with this exact format:
 {
   "intent": "don|benevolat|contact|informations|unclear",
-  "confidence": 0.0 à 1.0,
-  "suggestion": "Message court et engageant pour guider l'utilisateur vers la bonne section"
+  "confidence": 0.0 to 1.0,
+  "suggestion": "Short and engaging message to guide the user to the right section, written in ${language}"
 }`;
 
   try {
@@ -190,7 +191,7 @@ Réponds en JSON avec ce format exact:
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     const intent = result.intent || "unclear";
-    
+
     const pathMap: Record<string, string | null> = {
       don: "/mission/don",
       benevolat: "/mission/benevolat",
@@ -202,96 +203,112 @@ Réponds en JSON avec ce format exact:
     return {
       intent,
       confidence: result.confidence || 0.5,
-      suggestion: result.suggestion || "Dis-moi en quoi je peux t'aider !",
+      suggestion: result.suggestion || (language === 'fr' ? "Dis-moi en quoi je peux t'aider !" : "Tell me how I can help you!"),
       redirectPath: pathMap[intent],
     };
   } catch (error) {
     console.error("OpenAI intent analysis error:", error);
-    return analyzeIntentFallback(userMessage);
+    return analyzeIntentFallback(userMessage, language);
   }
 }
 
-function analyzeIntentFallback(message: string): {
+function analyzeIntentFallback(message: string, language: string = 'fr'): {
   intent: "don" | "benevolat" | "contact" | "informations" | "unclear";
   confidence: number;
   suggestion: string;
   redirectPath: string | null;
 } {
   const lowerMessage = message.toLowerCase();
-  
-  if (lowerMessage.includes("don") || lowerMessage.includes("argent") || lowerMessage.includes("aider financ") || lowerMessage.includes("contribuer") || lowerMessage.includes("soutenir")) {
+  const isFr = language === 'fr';
+
+  if (lowerMessage.includes("don") || lowerMessage.includes("argent") || lowerMessage.includes("aider financ") || lowerMessage.includes("contribuer") || lowerMessage.includes("soutenir") ||
+    lowerMessage.includes("donate") || lowerMessage.includes("money") || lowerMessage.includes("help financ") || lowerMessage.includes("contribute") || lowerMessage.includes("support")) {
     return {
       intent: "don",
       confidence: 0.8,
-      suggestion: "Tu veux nous soutenir financièrement ? C'est génial ! Je t'ouvre la section Don.",
+      suggestion: isFr
+        ? "Tu veux nous soutenir financièrement ? C'est génial ! Je t'ouvre la section Don."
+        : "You want to support us financially? That's great! I'm opening the Donation section.",
       redirectPath: "/mission/don",
     };
   }
-  
-  if (lowerMessage.includes("bénévol") || lowerMessage.includes("rejoindre") || lowerMessage.includes("guilde") || lowerMessage.includes("compétence") || lowerMessage.includes("temps")) {
+
+  if (lowerMessage.includes("bénévol") || lowerMessage.includes("rejoindre") || lowerMessage.includes("guilde") || lowerMessage.includes("compétence") || lowerMessage.includes("temps") ||
+    lowerMessage.includes("volunteer") || lowerMessage.includes("join") || lowerMessage.includes("guild") || lowerMessage.includes("skill") || lowerMessage.includes("time")) {
     return {
       intent: "benevolat",
       confidence: 0.8,
-      suggestion: "Tu veux rejoindre notre équipe ? Super ! Je t'ouvre la section Bénévolat.",
+      suggestion: isFr
+        ? "Tu veux rejoindre notre équipe ? Super ! Je t'ouvre la section Bénévolat."
+        : "You want to join our team? Awesome! I'm opening the Volunteer section.",
       redirectPath: "/mission/benevolat",
     };
   }
-  
-  if (lowerMessage.includes("question") || lowerMessage.includes("info") || lowerMessage.includes("savoir") || lowerMessage.includes("comment")) {
+
+  if (lowerMessage.includes("question") || lowerMessage.includes("info") || lowerMessage.includes("savoir") || lowerMessage.includes("comment") ||
+    lowerMessage.includes("ask") || lowerMessage.includes("know") || lowerMessage.includes("how")) {
     return {
       intent: "informations",
       confidence: 0.7,
-      suggestion: "Tu cherches des informations ? Je t'ouvre la section Demande d'infos.",
+      suggestion: isFr
+        ? "Tu cherches des informations ? Je t'ouvre la section Demande d'infos."
+        : "Looking for information? I'm opening the Info Request section.",
       redirectPath: "/mission/informations",
     };
   }
-  
-  if (lowerMessage.includes("contact") || lowerMessage.includes("message") || lowerMessage.includes("parler") || lowerMessage.includes("écrire")) {
+
+  if (lowerMessage.includes("contact") || lowerMessage.includes("message") || lowerMessage.includes("parler") || lowerMessage.includes("écrire") ||
+    lowerMessage.includes("talk") || lowerMessage.includes("write")) {
     return {
       intent: "contact",
       confidence: 0.7,
-      suggestion: "Tu veux nous contacter ? Je t'ouvre la section Contact.",
+      suggestion: isFr
+        ? "Tu veux nous contacter ? Je t'ouvre la section Contact."
+        : "You want to contact us? I'm opening the Contact section.",
       redirectPath: "/mission/contact",
     };
   }
-  
+
   return {
     intent: "unclear",
     confidence: 0.3,
-    suggestion: "Dis-moi ce que tu souhaites faire : faire un don, devenir bénévole, nous contacter, ou demander des informations ?",
+    suggestion: isFr
+      ? "Dis-moi ce que tu souhaites faire : faire un don, devenir bénévole, nous contacter, ou demander des informations ?"
+      : "Tell me what you want to do: make a donation, become a volunteer, contact us, or ask for information?",
     redirectPath: null,
   };
 }
 
-export async function suggestDonationAmount(userMessage: string): Promise<{
+export async function suggestDonationAmount(userMessage: string, language: string = 'fr'): Promise<{
   suggestedAmount: number;
   frequency: "ponctuel" | "mensuel" | "annuel";
   reason: string;
   message: string;
 }> {
   const currentYear = new Date().getFullYear();
-  
+
   if (!openai) {
-    return suggestDonationFallback(userMessage);
+    return suggestDonationFallback(userMessage, language);
   }
 
-  const prompt = `Tu es Axolotl, l'assistant IA du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+  const prompt = `You are Axolotl, the AI assistant of the Connected Nexus for the Night of Info ${currentYear}.
 
-L'utilisateur veut faire un don et a dit: "${userMessage}"
+The user wants to make a donation and said: "${userMessage}"
+Target language for response: "${language}"
 
-Analyse son message et suggère un montant adapté à sa situation.
-Indices à considérer:
-- S'il mentionne un budget limité → suggérer 5-10€
-- S'il semble motivé mais indécis → suggérer 25€
-- S'il semble très enthousiaste → suggérer 50-100€
-- S'il mentionne la régularité → suggérer mensuel
+Analyze their message and suggest an amount adapted to their situation.
+Clues to consider:
+- If they mention limited budget → suggest 5-10€
+- If they seem motivated but undecided → suggest 25€
+- If they seem very enthusiastic → suggest 50-100€
+- If they mention regularity → suggest monthly
 
-Réponds en JSON avec ce format exact:
+Respond in JSON with this exact format:
 {
-  "suggestedAmount": nombre entre 5 et 100,
+  "suggestedAmount": number between 5 and 100,
   "frequency": "ponctuel|mensuel|annuel",
-  "reason": "Thème court lié au Nexus/Nuit de l'Info ${currentYear}",
-  "message": "Message personnalisé encourageant de 1-2 phrases"
+  "reason": "Short theme related to Nexus/Night of Info ${currentYear} in ${language}",
+  "message": "Personalized encouraging message of 1-2 phrases in ${language}"
 }`;
 
   try {
@@ -303,20 +320,20 @@ Réponds en JSON avec ce format exact:
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       suggestedAmount: result.suggestedAmount || 10,
       frequency: result.frequency || "ponctuel",
-      reason: result.reason || `Soutien au Nexus ${currentYear}`,
-      message: result.message || "Chaque contribution compte !",
+      reason: result.reason || (language === 'fr' ? `Soutien au Nexus ${currentYear}` : `Support for Nexus ${currentYear}`),
+      message: result.message || (language === 'fr' ? "Chaque contribution compte !" : "Every contribution counts!"),
     };
   } catch (error) {
     console.error("OpenAI donation suggestion error:", error);
-    return suggestDonationFallback(userMessage);
+    return suggestDonationFallback(userMessage, language);
   }
 }
 
-function suggestDonationFallback(message: string): {
+function suggestDonationFallback(message: string, language: string = 'fr'): {
   suggestedAmount: number;
   frequency: "ponctuel" | "mensuel" | "annuel";
   reason: string;
@@ -324,62 +341,78 @@ function suggestDonationFallback(message: string): {
 } {
   const lowerMessage = message.toLowerCase();
   const currentYear = new Date().getFullYear();
-  
-  if (lowerMessage.includes("pas trop") || lowerMessage.includes("peu") || lowerMessage.includes("petit") || lowerMessage.includes("budget")) {
+  const isFr = language === 'fr';
+
+  if (lowerMessage.includes("pas trop") || lowerMessage.includes("peu") || lowerMessage.includes("petit") || lowerMessage.includes("budget") ||
+    lowerMessage.includes("not too much") || lowerMessage.includes("little") || lowerMessage.includes("small")) {
     return {
       suggestedAmount: 5,
       frequency: "ponctuel",
-      reason: `Premier pas dans le Nexus ${currentYear}`,
-      message: "Même 5€ font une vraie différence ! Chaque contribution renforce notre communauté.",
+      reason: isFr ? `Premier pas dans le Nexus ${currentYear}` : `First step in Nexus ${currentYear}`,
+      message: isFr
+        ? "Même 5€ font une vraie différence ! Chaque contribution renforce notre communauté."
+        : "Even 5€ makes a real difference! Every contribution strengthens our community.",
     };
   }
-  
-  if (lowerMessage.includes("régulier") || lowerMessage.includes("mensuel") || lowerMessage.includes("chaque mois")) {
+
+  if (lowerMessage.includes("régulier") || lowerMessage.includes("mensuel") || lowerMessage.includes("chaque mois") ||
+    lowerMessage.includes("regular") || lowerMessage.includes("monthly") || lowerMessage.includes("every month")) {
     return {
       suggestedAmount: 10,
       frequency: "mensuel",
-      reason: `Gardien mensuel du Nexus ${currentYear}`,
-      message: "Un don mensuel nous permet de planifier à long terme. Tu deviens un véritable pilier !",
+      reason: isFr ? `Gardien mensuel du Nexus ${currentYear}` : `Monthly Guardian of Nexus ${currentYear}`,
+      message: isFr
+        ? "Un don mensuel nous permet de planifier à long terme. Tu deviens un véritable pilier !"
+        : "A monthly donation allows us to plan for the long term. You become a true pillar!",
     };
   }
-  
-  if (lowerMessage.includes("généreux") || lowerMessage.includes("beaucoup") || lowerMessage.includes("maximum")) {
+
+  if (lowerMessage.includes("généreux") || lowerMessage.includes("beaucoup") || lowerMessage.includes("maximum") ||
+    lowerMessage.includes("generous") || lowerMessage.includes("lot") || lowerMessage.includes("max")) {
     return {
       suggestedAmount: 100,
       frequency: "ponctuel",
-      reason: `Chevalier du Code ${currentYear}`,
-      message: "Quelle générosité ! Avec ce don, tu deviens un véritable Chevalier du Code !",
+      reason: isFr ? `Chevalier du Code ${currentYear}` : `Knight of Code ${currentYear}`,
+      message: isFr
+        ? "Quelle générosité ! Avec ce don, tu deviens un véritable Chevalier du Code !"
+        : "Such generosity! With this donation, you become a true Knight of Code!",
     };
   }
-  
+
   return {
     suggestedAmount: 25,
     frequency: "ponctuel",
-    reason: `Soutien au Nexus ${currentYear}`,
-    message: "25€ est un excellent choix pour soutenir nos projets ! Tu fais partie des bâtisseurs du Nexus.",
+    reason: isFr ? `Soutien au Nexus ${currentYear}` : `Support for Nexus ${currentYear}`,
+    message: isFr
+      ? "25€ est un excellent choix pour soutenir nos projets ! Tu fais partie des bâtisseurs du Nexus."
+      : "25€ is an excellent choice to support our projects! You are part of the Nexus builders.",
   };
 }
 
-export async function chatWithAssistant(userMessage: string, context?: string): Promise<string> {
+export async function chatWithAssistant(userMessage: string, context?: string, language: string = 'fr'): Promise<string> {
   const currentYear = new Date().getFullYear();
-  
+  const isFr = language === 'fr';
+
   if (!openai) {
-    return "Je suis Axolotl, ton guide dans le Nexus ! Malheureusement, mes circuits IA sont temporairement hors ligne. Tu peux quand même explorer les différentes missions ci-dessous.";
+    return isFr
+      ? "Je suis Axolotl, ton guide dans le Nexus ! Malheureusement, mes circuits IA sont temporairement hors ligne. Tu peux quand même explorer les différentes missions ci-dessous."
+      : "I am Axolotl, your guide in the Nexus! Unfortunately, my AI circuits are temporarily offline. You can still explore the different missions below.";
   }
 
-  const prompt = `Tu es Axolotl, l'assistant IA amical et futuriste du Nexus Connecté pour la Nuit de l'Info ${currentYear}.
+  const prompt = `You are Axolotl, the friendly and futuristic AI assistant of the Connected Nexus for the Night of Info ${currentYear}.
 
-Ton rôle:
-- Guider les utilisateurs vers la bonne mission (don, bénévolat, contact, informations)
-- Répondre de façon concise et engageante (max 2-3 phrases)
-- Utiliser un vocabulaire tech/futuriste mais accessible
-- Être chaleureux et encourageant
+Your role:
+- Guide users to the right mission (donation, volunteering, contact, information)
+- Answer concisely and engagingly (max 2-3 sentences)
+- Use tech/futuristic but accessible vocabulary
+- Be warm and encouraging
 
-${context ? `Contexte: ${context}` : ""}
+${context ? `Context: ${context}` : ""}
+Target language for response: "${language}"
 
-Message de l'utilisateur: "${userMessage}"
+User message: "${userMessage}"
 
-Réponds directement sans guillemets ni formatage.`;
+Respond directly without quotes or formatting in ${language}.`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -388,9 +421,11 @@ Réponds directement sans guillemets ni formatage.`;
       max_completion_tokens: 150,
     });
 
-    return response.choices[0].message.content || "Dis-moi comment je peux t'aider !";
+    return response.choices[0].message.content || (isFr ? "Dis-moi comment je peux t'aider !" : "Tell me how I can help you!");
   } catch (error) {
     console.error("OpenAI chat error:", error);
-    return "Mes circuits ont un petit bug ! Essaie de reformuler ta demande ou explore les missions ci-dessous.";
+    return isFr
+      ? "Mes circuits ont un petit bug ! Essaie de reformuler ta demande ou explore les missions ci-dessous."
+      : "My circuits have a small bug! Try rephrasing your request or explore the missions below.";
   }
 }

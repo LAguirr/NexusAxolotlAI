@@ -12,7 +12,8 @@ import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { AIAvatar } from "@/components/ai-avatar";
+import { useEffect } from "react";
+import { useChat } from "@/lib/chat-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EmotionSelector } from "@/components/emotion-selector";
 import { contactFormSchema, type ContactForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
@@ -52,8 +53,23 @@ const lastNameSuggestions = [
 export default function MissionContact() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [aiMessage, setAiMessage] = useState("Tu souhaites établir le contact ! Je suis tout ouïe. Décris-nous ta requête et nos Agents de Support te répondront dans les plus brefs délais.");
+  const { setMessage, language } = useChat();
+
+  const initialMessages = {
+    fr: "Tu souhaites établir le contact ! Je suis tout ouïe. Décris-nous ta requête et nos Agents de Support te répondront dans les plus brefs délais.",
+    en: "You wish to establish contact! I am all ears. Describe your request and our Support Agents will answer you as soon as possible."
+  };
+
+  const [aiMessage, setAiMessage] = useState(initialMessages[language]);
   const [charCount, setCharCount] = useState(0);
+
+  useEffect(() => {
+    setAiMessage(initialMessages[language]);
+  }, [language]);
+
+  useEffect(() => {
+    setMessage(aiMessage);
+  }, [aiMessage, setMessage]);
 
   const form = useForm<ContactForm>({
     resolver: zodResolver(contactFormSchema),
@@ -101,8 +117,6 @@ export default function MissionContact() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AIAvatar message={aiMessage} isTyping={submitMutation.isPending} />
-
       <header className="fixed top-4 left-4 z-40 flex items-center gap-2">
         <Button
           variant="ghost"
@@ -149,8 +163,8 @@ export default function MissionContact() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton prénom" 
+                            <AutocompleteInput
+                              placeholder="Ton prénom"
                               suggestions={firstNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -168,8 +182,8 @@ export default function MissionContact() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton nom" 
+                            <AutocompleteInput
+                              placeholder="Ton nom"
                               suggestions={lastNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -189,9 +203,9 @@ export default function MissionContact() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="ton.email@exemple.com" 
+                          <Input
+                            type="email"
+                            placeholder="ton.email@exemple.com"
                             {...field}
                             data-testid="input-email"
                           />
@@ -208,8 +222,8 @@ export default function MissionContact() {
                       <FormItem>
                         <FormLabel>Sujet</FormLabel>
                         <FormControl>
-                          <AutocompleteInput 
-                            placeholder="De quoi souhaites-tu nous parler ?" 
+                          <AutocompleteInput
+                            placeholder="De quoi souhaites-tu nous parler ?"
                             suggestions={subjectSuggestions}
                             value={field.value}
                             onChange={field.onChange}
@@ -229,7 +243,7 @@ export default function MissionContact() {
                         <FormLabel>Message</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Textarea 
+                            <Textarea
                               placeholder="Détaille ta demande ici..."
                               className="resize-none min-h-[150px]"
                               {...field}

@@ -1,20 +1,22 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Home, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AIAvatar } from "@/components/ai-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useChat } from "@/lib/chat-context";
 
 export default function NotFound() {
   const [, navigate] = useLocation();
+  const { setMessage } = useChat();
+
+  useEffect(() => {
+    setMessage("Oups ! Tu sembles t'être perdu dans les méandres du Nexus. Cette page n'existe pas dans notre dimension. Laisse-moi te ramener vers un territoire connu !");
+  }, [setMessage]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <AIAvatar 
-        message="Oups ! Tu sembles t'être perdu dans les méandres du Nexus. Cette page n'existe pas dans notre dimension. Laisse-moi te ramener vers un territoire connu !"
-      />
-
       <header className="fixed top-4 left-4 z-40">
         <ThemeToggle />
       </header>

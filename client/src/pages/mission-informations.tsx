@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -13,12 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AIAvatar } from "@/components/ai-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EmotionSelector } from "@/components/emotion-selector";
 import { infoRequestFormSchema, type InfoRequestForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useChat } from "@/lib/chat-context";
 
 const requestTypes = [
   { value: "association", label: "Informations sur l'association" },
@@ -48,7 +48,22 @@ const lastNameSuggestions = [
 export default function MissionInformations() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [aiMessage, setAiMessage] = useState("Tu cherches des informations ? Je suis là pour t'orienter. Dis-moi ce que tu souhaites savoir et nous te répondrons avec précision !");
+  const { setMessage, language } = useChat();
+
+  const initialMessages = {
+    fr: "Tu cherches des informations ? Je suis là pour t'orienter. Dis-moi ce que tu souhaites savoir et nous te répondrons avec précision !",
+    en: "Looking for information? I'm here to guide you. Tell me what you want to know and we will answer you precisely!"
+  };
+
+  const [aiMessage, setAiMessage] = useState(initialMessages[language]);
+
+  useEffect(() => {
+    setAiMessage(initialMessages[language]);
+  }, [language]);
+
+  useEffect(() => {
+    setMessage(aiMessage);
+  }, [aiMessage, setMessage]);
 
   const form = useForm<InfoRequestForm>({
     resolver: zodResolver(infoRequestFormSchema),
@@ -82,7 +97,7 @@ export default function MissionInformations() {
 
   const handleRequestTypeChange = (value: string) => {
     form.setValue("requestType", value);
-    
+
     const messages: Record<string, string> = {
       association: "Excellente question ! Notre association a une histoire riche à partager.",
       projets: "Nos projets sont passionnants ! Nous avons hâte de te les présenter.",
@@ -92,7 +107,7 @@ export default function MissionInformations() {
       technique: "Une question technique ? Nos experts sont là pour t'aider.",
       autre: "Toute question est bienvenue ! Décris ce que tu recherches.",
     };
-    
+
     setAiMessage(messages[value] || aiMessage);
   };
 
@@ -103,8 +118,6 @@ export default function MissionInformations() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AIAvatar message={aiMessage} isTyping={submitMutation.isPending} />
-
       <header className="fixed top-4 left-4 z-40 flex items-center gap-2">
         <Button
           variant="ghost"
@@ -151,8 +164,8 @@ export default function MissionInformations() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton prénom" 
+                            <AutocompleteInput
+                              placeholder="Ton prénom"
                               suggestions={firstNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -170,8 +183,8 @@ export default function MissionInformations() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton nom" 
+                            <AutocompleteInput
+                              placeholder="Ton nom"
                               suggestions={lastNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -191,9 +204,9 @@ export default function MissionInformations() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="ton.email@exemple.com" 
+                          <Input
+                            type="email"
+                            placeholder="ton.email@exemple.com"
                             {...field}
                             data-testid="input-email"
                           />
@@ -209,8 +222,8 @@ export default function MissionInformations() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Type de demande</FormLabel>
-                        <Select 
-                          onValueChange={handleRequestTypeChange} 
+                        <Select
+                          onValueChange={handleRequestTypeChange}
                           value={field.value}
                         >
                           <FormControl>
@@ -220,8 +233,8 @@ export default function MissionInformations() {
                           </FormControl>
                           <SelectContent>
                             {requestTypes.map((type) => (
-                              <SelectItem 
-                                key={type.value} 
+                              <SelectItem
+                                key={type.value}
                                 value={type.value}
                                 data-testid={`option-request-${type.value}`}
                               >
@@ -242,7 +255,7 @@ export default function MissionInformations() {
                       <FormItem>
                         <FormLabel>Question spécifique (optionnel)</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Décris plus précisément ce que tu recherches..."
                             className="resize-none min-h-[100px]"
                             {...field}

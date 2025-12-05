@@ -1,10 +1,10 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Gift, Users, MessageSquare, HelpCircle } from "lucide-react";
-import { AIAvatar } from "@/components/ai-avatar";
 import { MissionCard } from "@/components/mission-card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AIChatWidget } from "@/components/ai-chat-widget";
+import { useChat } from "@/lib/chat-context";
 
 const missions = [
   {
@@ -39,15 +39,20 @@ const missions = [
 
 export default function Home() {
   const [, navigate] = useLocation();
+  const { setMessage, language } = useChat();
+
+  useEffect(() => {
+    const messages = {
+      fr: "Salutations, voyageur des flux de données ! Je suis Axolotl, ton guide dans le Nexus. Quelle mission choisis-tu ?",
+      en: "Greetings, data stream traveler! I am Axolotl, your guide in the Nexus. Which mission do you choose?"
+    };
+    setMessage(messages[language]);
+  }, [setMessage, language]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 cyber-grid opacity-30" />
       <div className="absolute inset-0 circuit-pattern opacity-20" />
-      
-      <AIAvatar 
-        message="Salutations, voyageur des flux de données ! Je suis Axolotl, ton guide dans le Nexus. Quelle mission choisis-tu ?"
-      />
 
       <header className="fixed top-4 left-4 z-40">
         <ThemeToggle />
@@ -58,7 +63,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-accent/5 to-background" />
         <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-primary/5 blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-40 h-40 rounded-full bg-accent/5 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,9 +84,9 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
             <span className="holographic">L'Écho Personnalisé</span>
           </h1>
-          
+
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Bienvenue dans le Nexus, voyageur. Notre communauté a besoin de toi. 
+            Bienvenue dans le Nexus, voyageur. Notre communauté a besoin de toi.
             Choisis ta mission et ensemble, renforçons les liens de notre réseau.
           </p>
         </motion.div>
@@ -127,8 +132,6 @@ export default function Home() {
           </p>
         </div>
       </footer>
-
-      <AIChatWidget />
     </div>
   );
 }

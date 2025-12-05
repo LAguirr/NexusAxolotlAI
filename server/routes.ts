@@ -2,12 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { submissionFormSchema } from "@shared/schema";
-import { 
-  generateThankYouMessage, 
-  classifyContactRequest, 
-  analyzeUserIntent, 
+import {
+  generateThankYouMessage,
+  classifyContactRequest,
+  analyzeUserIntent,
   suggestDonationAmount,
-  chatWithAssistant 
+  chatWithAssistant
 } from "./openai";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -20,9 +20,9 @@ export async function registerRoutes(
   app.post("/api/submissions", async (req, res) => {
     try {
       const validatedData = submissionFormSchema.parse(req.body);
-      
+
       let submissionData: any = { ...validatedData };
-      
+
       if (validatedData.missionType === "contact") {
         const classification = await classifyContactRequest(
           validatedData.message,
@@ -32,12 +32,12 @@ export async function registerRoutes(
         submissionData.priority = classification.priority;
         submissionData.aiSummary = classification.summary;
       }
-      
+
       const submission = await storage.createSubmission(submissionData);
-      
+
       const aiMessage = await generateThankYouMessage(submission);
       await storage.updateSubmissionAIMessage(submission.id, aiMessage);
-      
+
       const response = {
         id: submission.id,
         missionType: submission.missionType,
@@ -46,14 +46,14 @@ export async function registerRoutes(
         aiThankYouMessage: aiMessage,
         createdAt: submission.createdAt,
       };
-      
+
       res.status(201).json(response);
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
-        res.status(400).json({ 
-          error: "Validation error", 
-          details: validationError.message 
+        res.status(400).json({
+          error: "Validation error",
+          details: validationError.message
         });
       } else {
         console.error("Submission error:", error);
@@ -66,11 +66,11 @@ export async function registerRoutes(
     try {
       const { id } = req.params;
       const submission = await storage.getSubmission(id);
-      
+
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
       }
-      
+
       const response = {
         id: submission.id,
         missionType: submission.missionType,
@@ -79,7 +79,7 @@ export async function registerRoutes(
         aiThankYouMessage: submission.aiThankYouMessage,
         createdAt: submission.createdAt,
       };
-      
+
       res.json(response);
     } catch (error) {
       console.error("Get submission error:", error);
@@ -90,7 +90,7 @@ export async function registerRoutes(
   app.get("/api/submissions", async (req, res) => {
     try {
       const submissions = await storage.getAllSubmissions();
-      
+
       const response = submissions.map(s => ({
         id: s.id,
         missionType: s.missionType,
@@ -99,7 +99,7 @@ export async function registerRoutes(
         email: s.email,
         createdAt: s.createdAt,
       }));
-      
+
       res.json(response);
     } catch (error) {
       console.error("Get all submissions error:", error);
@@ -109,13 +109,13 @@ export async function registerRoutes(
 
   app.post("/api/ai/analyze-intent", async (req, res) => {
     try {
-      const { message } = req.body;
-      
+      const { message, language } = req.body;
+
       if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
-      
-      const result = await analyzeUserIntent(message);
+
+      const result = await analyzeUserIntent(message, language || 'fr');
       res.json(result);
     } catch (error) {
       console.error("Intent analysis error:", error);
@@ -125,13 +125,13 @@ export async function registerRoutes(
 
   app.post("/api/ai/suggest-donation", async (req, res) => {
     try {
-      const { message } = req.body;
-      
+      const { message, language } = req.body;
+
       if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
-      
-      const result = await suggestDonationAmount(message);
+
+      const result = await suggestDonationAmount(message, language || 'fr');
       res.json(result);
     } catch (error) {
       console.error("Donation suggestion error:", error);
@@ -141,13 +141,13 @@ export async function registerRoutes(
 
   app.post("/api/ai/chat", async (req, res) => {
     try {
-      const { message, context } = req.body;
-      
+      const { message, context, language } = req.body;
+
       if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
-      
-      const response = await chatWithAssistant(message, context);
+
+      const response = await chatWithAssistant(message, context, language || 'fr');
       res.json({ response });
     } catch (error) {
       console.error("Chat error:", error);

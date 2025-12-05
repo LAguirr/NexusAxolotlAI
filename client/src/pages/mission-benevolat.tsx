@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AIAvatar } from "@/components/ai-avatar";
+import { useEffect } from "react";
+import { useChat } from "@/lib/chat-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EmotionSelector } from "@/components/emotion-selector";
 import { volunteerFormSchema, type VolunteerForm, type EmotionType, type SubmissionResponse } from "@shared/schema";
@@ -58,7 +59,22 @@ const lastNameSuggestions = [
 export default function MissionBenevolat() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [aiMessage, setAiMessage] = useState("Bienvenue, futur Chevalier du Code ! Rejoins notre guilde de bénévoles. Partage tes compétences et ta disponibilité pour renforcer notre communauté.");
+  const { setMessage, language } = useChat();
+
+  const initialMessages = {
+    fr: "Bienvenue, futur Chevalier du Code ! Rejoins notre guilde de bénévoles. Partage tes compétences et ta disponibilité pour renforcer notre communauté.",
+    en: "Welcome, future Knight of Code! Join our guild of volunteers. Share your skills and availability to strengthen our community."
+  };
+
+  const [aiMessage, setAiMessage] = useState(initialMessages[language]);
+
+  useEffect(() => {
+    setAiMessage(initialMessages[language]);
+  }, [language]);
+
+  useEffect(() => {
+    setMessage(aiMessage);
+  }, [aiMessage, setMessage]);
 
   const form = useForm<VolunteerForm>({
     resolver: zodResolver(volunteerFormSchema),
@@ -114,8 +130,6 @@ export default function MissionBenevolat() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AIAvatar message={aiMessage} isTyping={submitMutation.isPending} />
-
       <header className="fixed top-4 left-4 z-40 flex items-center gap-2">
         <Button
           variant="ghost"
@@ -162,8 +176,8 @@ export default function MissionBenevolat() {
                         <FormItem>
                           <FormLabel>Prénom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton prénom" 
+                            <AutocompleteInput
+                              placeholder="Ton prénom"
                               suggestions={firstNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -181,8 +195,8 @@ export default function MissionBenevolat() {
                         <FormItem>
                           <FormLabel>Nom</FormLabel>
                           <FormControl>
-                            <AutocompleteInput 
-                              placeholder="Ton nom" 
+                            <AutocompleteInput
+                              placeholder="Ton nom"
                               suggestions={lastNameSuggestions}
                               value={field.value}
                               onChange={field.onChange}
@@ -202,9 +216,9 @@ export default function MissionBenevolat() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="ton.email@exemple.com" 
+                          <Input
+                            type="email"
+                            placeholder="ton.email@exemple.com"
                             {...field}
                             data-testid="input-email"
                           />
@@ -224,24 +238,22 @@ export default function MissionBenevolat() {
                           {availableSkills.map((skill) => (
                             <label
                               key={skill.id}
-                              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                                selectedSkills.includes(skill.id)
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/40"
-                              }`}
+                              className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedSkills.includes(skill.id)
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/40"
+                                }`}
                             >
                               <Checkbox
                                 checked={selectedSkills.includes(skill.id)}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handleSkillToggle(skill.id, checked as boolean)
                                 }
                                 data-testid={`checkbox-skill-${skill.id}`}
                               />
-                              <span className={`text-sm ${
-                                selectedSkills.includes(skill.id) 
-                                  ? "text-foreground font-medium" 
-                                  : "text-muted-foreground"
-                              }`}>
+                              <span className={`text-sm ${selectedSkills.includes(skill.id)
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                                }`}>
                                 {skill.label}
                               </span>
                             </label>
@@ -266,8 +278,8 @@ export default function MissionBenevolat() {
                           </FormControl>
                           <SelectContent>
                             {availabilityOptions.map((option) => (
-                              <SelectItem 
-                                key={option.value} 
+                              <SelectItem
+                                key={option.value}
                                 value={option.value}
                                 data-testid={`option-availability-${option.value}`}
                               >
@@ -288,7 +300,7 @@ export default function MissionBenevolat() {
                       <FormItem>
                         <FormLabel>Ta motivation (optionnel)</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Pourquoi veux-tu rejoindre notre guilde ?"
                             className="resize-none min-h-[100px]"
                             {...field}

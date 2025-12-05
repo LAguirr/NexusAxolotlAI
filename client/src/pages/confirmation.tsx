@@ -6,10 +6,10 @@ import { ArrowLeft, Home, CheckCircle, Sparkles, Gift, Users, MessageSquare, Hel
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AIAvatar } from "@/components/ai-avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SubmissionResponse, MissionType } from "@shared/schema";
+import { useChat } from "@/lib/chat-context";
 
 const missionIcons: Record<MissionType, typeof Gift> = {
   don: Gift,
@@ -29,6 +29,7 @@ export default function Confirmation() {
   const [, navigate] = useLocation();
   const params = useParams<{ id: string }>();
   const [showConfetti, setShowConfetti] = useState(true);
+  const { setMessage } = useChat();
 
   const { data: submission, isLoading, error } = useQuery<SubmissionResponse>({
     queryKey: ["/api/submissions", params.id],
@@ -39,6 +40,14 @@ export default function Confirmation() {
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (submission) {
+      setMessage(`Mission accomplie, ${submission.firstName} ! Tu as fait un grand pas pour le Nexus. Nous te remercions du fond du code !`);
+    } else {
+      setMessage("Chargement de ta confirmation...");
+    }
+  }, [submission, setMessage]);
 
   const Icon = submission ? missionIcons[submission.missionType as MissionType] : CheckCircle;
   const missionLabel = submission ? missionLabels[submission.missionType as MissionType] : "Mission";
@@ -61,14 +70,6 @@ export default function Confirmation() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-      <AIAvatar 
-        message={
-          submission 
-            ? `Mission accomplie, ${submission.firstName} ! Tu as fait un grand pas pour le Nexus. Nous te remercions du fond du code !`
-            : "Chargement de ta confirmation..."
-        }
-        isTyping={isLoading}
-      />
 
       <header className="fixed top-4 left-4 z-40 flex items-center gap-2">
         <Button
@@ -87,18 +88,18 @@ export default function Confirmation() {
           {[...Array(20)].map((_, i) => (
             <motion.div
               key={i}
-              initial={{ 
-                y: -20, 
+              initial={{
+                y: -20,
                 x: Math.random() * window.innerWidth,
                 rotate: 0,
-                opacity: 1 
+                opacity: 1
               }}
-              animate={{ 
+              animate={{
                 y: window.innerHeight + 20,
                 rotate: 360 * (Math.random() > 0.5 ? 1 : -1),
                 opacity: 0
               }}
-              transition={{ 
+              transition={{
                 duration: 2 + Math.random() * 2,
                 delay: Math.random() * 0.5,
                 ease: "easeOut"
@@ -182,7 +183,7 @@ export default function Confirmation() {
                     <div className="flex items-start gap-3 mb-6">
                       <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                       <div className="prose prose-lg dark:prose-invert">
-                        <p 
+                        <p
                           className="text-foreground leading-relaxed text-lg"
                           data-testid="text-ai-message"
                         >
@@ -196,12 +197,12 @@ export default function Confirmation() {
                         <div>
                           <p className="text-muted-foreground">Date</p>
                           <p className="font-medium text-foreground">
-                            {submission?.createdAt 
+                            {submission?.createdAt
                               ? new Date(submission.createdAt).toLocaleDateString('fr-FR', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric'
-                                })
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })
                               : '-'
                             }
                           </p>
@@ -217,7 +218,7 @@ export default function Confirmation() {
 
                     <div className="bg-primary/5 rounded-xl p-4 mt-6">
                       <p className="text-sm text-center text-muted-foreground">
-                        Ton soutien en <span className="font-semibold text-foreground">{new Date().getFullYear()}</span> est crucial pour notre progression ! 
+                        Ton soutien en <span className="font-semibold text-foreground">{new Date().getFullYear()}</span> est crucial pour notre progression !
                         Reste connecté pour suivre nos exploits tout au long de l'année.
                       </p>
                     </div>
