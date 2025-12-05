@@ -111,12 +111,16 @@ export async function registerRoutes(
   app.post("/api/ai/analyze-intent", async (req, res) => {
     try {
       const { message, language } = req.body;
+      console.error("DEBUG: Analyze intent request:", { message, language, type: typeof language });
 
       if (!message || typeof message !== "string") {
+        console.error("DEBUG: Invalid message");
         return res.status(400).json({ error: "Message is required" });
       }
 
-      const result = await analyzeUserIntent(message, language || 'fr');
+      const safeLanguage = (typeof language === 'string' && (language === 'fr' || language === 'en')) ? language : 'fr';
+      const result = await analyzeUserIntent(message, safeLanguage);
+      console.error("DEBUG: Analyze intent result:", result);
       res.json(result);
     } catch (error) {
       console.error("Intent analysis error:", error);

@@ -122,7 +122,8 @@ export function AIChatWidget() {
       };
       setMessages((prev) => [...prev, aiMessage]);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Analyze intent error:", error);
       toast({
         title: t.connectionErrorTitle,
         description: t.connectionErrorDesc,
