@@ -92,7 +92,7 @@ export default function MissionBenevolat() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: VolunteerForm) => {
-      const response = await apiRequest("POST", "/api/submissions", data);
+      const response = await apiRequest("POST", "/api/submissions", { ...data, language });
       return await response.json() as SubmissionResponse;
     },
     onSuccess: (data) => {
@@ -114,9 +114,13 @@ export default function MissionBenevolat() {
     if (checked) {
       form.setValue("skills", [...current, skillId]);
       if (current.length === 0) {
-        setAiMessage("Excellente compétence ! Continue à nous montrer tes talents.");
+        setAiMessage(language === 'fr'
+          ? "Excellente compétence ! Continue à nous montrer tes talents."
+          : "Excellent skill! Keep showing us your talents.");
       } else if (current.length >= 2) {
-        setAiMessage("Impressionnant ! Tu es un véritable couteau suisse du Nexus !");
+        setAiMessage(language === 'fr'
+          ? "Impressionnant ! Tu es un véritable couteau suisse du Nexus !"
+          : "Impressive! You are a true Nexus Swiss Army knife!");
       }
     } else {
       form.setValue("skills", current.filter((s) => s !== skillId));
@@ -124,7 +128,9 @@ export default function MissionBenevolat() {
   };
 
   const onSubmit = (data: VolunteerForm) => {
-    setAiMessage("Enregistrement de ta candidature... Bienvenue dans la guilde !");
+    setAiMessage(language === 'fr'
+      ? "Enregistrement de ta candidature... Bienvenue dans la guilde !"
+      : "Recording your application... Welcome to the guild!");
     submitMutation.mutate(data);
   };
 

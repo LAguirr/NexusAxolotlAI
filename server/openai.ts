@@ -20,11 +20,12 @@ const missionContexts: Record<MissionType, string> = {
   informations: "L'utilisateur a demandé des informations sur l'association.",
 };
 
-export async function generateThankYouMessage(submission: Submission): Promise<string> {
+export async function generateThankYouMessage(submission: Submission, language: string = 'fr'): Promise<string> {
   const currentYear = new Date().getFullYear();
   const emotion = submission.emotionPreference || "bienveillant";
   const emotionStyle = emotionStyles[emotion];
   const missionContext = missionContexts[submission.missionType];
+  const isFr = language === 'fr';
 
   let specificDetails = "";
 
@@ -53,14 +54,16 @@ export async function generateThankYouMessage(submission: Submission): Promise<s
   }
 
   const prompt = `Tu es Axolotl, l'assistant IA du Nexus Connecté, une association liée à la Nuit de l'Info ${currentYear}.
-
+  
 ${emotionStyle}
 
 Contexte: ${missionContext}
 Nom de l'utilisateur: ${submission.firstName} ${submission.lastName}
 ${specificDetails}
 
-Génère un message de remerciement personnalisé en 2-3 phrases (maximum 150 mots). 
+Langue de réponse cible: "${language}"
+
+Génère un message de remerciement personnalisé en 2-3 phrases (maximum 150 mots) dans la langue cible (${language}). 
 - Mentionne le prénom de l'utilisateur
 - Fais référence à sa mission spécifique
 - Mentionne l'année ${currentYear}
@@ -71,7 +74,7 @@ Réponds uniquement avec le message de remerciement, sans guillemets ni formatag
 
   if (!openai) {
     console.log("OpenAI not configured, using fallback message");
-    return getFallbackMessage(submission, currentYear);
+    return getFallbackMessage(submission, currentYear, language);
   }
 
   try {
@@ -81,21 +84,30 @@ Réponds uniquement avec le message de remerciement, sans guillemets ni formatag
       max_completion_tokens: 256,
     });
 
-    return response.choices[0].message.content || getFallbackMessage(submission, currentYear);
+    return response.choices[0].message.content || getFallbackMessage(submission, currentYear, language);
   } catch (error) {
     console.error("OpenAI API error:", error);
-    return getFallbackMessage(submission, currentYear);
+    return getFallbackMessage(submission, currentYear, language);
   }
 }
 
-function getFallbackMessage(submission: Submission, year: number): string {
+function getFallbackMessage(submission: Submission, year: number, language: string = 'fr'): string {
   const { firstName, missionType } = submission;
+  const isFr = language === 'fr';
 
   const fallbacks: Record<MissionType, string> = {
-    don: `Merci infiniment ${firstName} ! Ton don renforce les fondations du Nexus en ${year}. Chaque contribution nous rapproche de notre objectif et permet à notre communauté de continuer à innover ensemble.`,
-    benevolat: `Bienvenue dans la guilde, ${firstName} ! En ${year}, le Nexus a besoin de talents comme le tien. Tes compétences seront précieuses pour notre communauté et nous avons hâte de collaborer avec toi.`,
-    contact: `Message bien reçu, ${firstName} ! Les Agents du Nexus en ${year} sont mobilisés pour te répondre. Ta voix compte dans notre communauté et nous te contacterons très prochainement.`,
-    informations: `Ta demande est enregistrée, ${firstName} ! L'équipe du Nexus ${year} va analyser ta requête et te fournir toutes les informations dont tu as besoin. Reste connecté !`,
+    don: isFr
+      ? `Merci infiniment ${firstName} ! Ton don renforce les fondations du Nexus en ${year}. Chaque contribution nous rapproche de notre objectif et permet à notre communauté de continuer à innover ensemble.`
+      : `Thank you so much ${firstName}! Your donation strengthens the foundations of the Nexus in ${year}. Every contribution brings us closer to our goal and allows our community to continue innovating together.`,
+    benevolat: isFr
+      ? `Bienvenue dans la guilde, ${firstName} ! En ${year}, le Nexus a besoin de talents comme le tien. Tes compétences seront précieuses pour notre communauté et nous avons hâte de collaborer avec toi.`
+      : `Welcome to the guild, ${firstName}! In ${year}, the Nexus needs talents like yours. Your skills will be valuable to our community and we look forward to collaborating with you.`,
+    contact: isFr
+      ? `Message bien reçu, ${firstName} ! Les Agents du Nexus en ${year} sont mobilisés pour te répondre. Ta voix compte dans notre communauté et nous te contacterons très prochainement.`
+      : `Message received, ${firstName}! The Nexus Agents in ${year} are mobilized to answer you. Your voice matters in our community and we will contact you very soon.`,
+    informations: isFr
+      ? `Ta demande est enregistrée, ${firstName} ! L'équipe du Nexus ${year} va analyser ta requête et te fournir toutes les informations dont tu as besoin. Reste connecté !`
+      : `Your request is recorded, ${firstName}! The Nexus ${year} team will analyze your request and provide you with all the information you need. Stay connected!`,
   };
 
   return fallbacks[missionType];

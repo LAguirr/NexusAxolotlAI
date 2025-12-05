@@ -80,7 +80,7 @@ export default function MissionInformations() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: InfoRequestForm) => {
-      const response = await apiRequest("POST", "/api/submissions", data);
+      const response = await apiRequest("POST", "/api/submissions", { ...data, language });
       return await response.json() as SubmissionResponse;
     },
     onSuccess: (data) => {
@@ -98,21 +98,46 @@ export default function MissionInformations() {
   const handleRequestTypeChange = (value: string) => {
     form.setValue("requestType", value);
 
-    const messages: Record<string, string> = {
-      association: "Excellente question ! Notre association a une histoire riche à partager.",
-      projets: "Nos projets sont passionnants ! Nous avons hâte de te les présenter.",
-      adhesion: "Rejoindre notre communauté est simple ! Je vais te guider.",
-      partenariat: "Un partenariat potentiel ? Formidable ! Nous sommes ouverts aux collaborations.",
-      evenements: "Nos événements sont toujours mémorables ! Voici comment en savoir plus.",
-      technique: "Une question technique ? Nos experts sont là pour t'aider.",
-      autre: "Toute question est bienvenue ! Décris ce que tu recherches.",
+    const messages: Record<string, Record<string, string>> = {
+      association: {
+        fr: "Excellente question ! Notre association a une histoire riche à partager.",
+        en: "Excellent question! Our association has a rich history to share."
+      },
+      projets: {
+        fr: "Nos projets sont passionnants ! Nous avons hâte de te les présenter.",
+        en: "Our projects are exciting! We look forward to presenting them to you."
+      },
+      adhesion: {
+        fr: "Rejoindre notre communauté est simple ! Je vais te guider.",
+        en: "Joining our community is simple! I will guide you."
+      },
+      partenariat: {
+        fr: "Un partenariat potentiel ? Formidable ! Nous sommes ouverts aux collaborations.",
+        en: "A potential partnership? Great! We are open to collaborations."
+      },
+      evenements: {
+        fr: "Nos événements sont toujours mémorables ! Voici comment en savoir plus.",
+        en: "Our events are always memorable! Here is how to find out more."
+      },
+      technique: {
+        fr: "Une question technique ? Nos experts sont là pour t'aider.",
+        en: "A technical question? Our experts are here to help you."
+      },
+      autre: {
+        fr: "Toute question est bienvenue ! Décris ce que tu recherches.",
+        en: "Any question is welcome! Describe what you are looking for."
+      },
     };
 
-    setAiMessage(messages[value] || aiMessage);
+    setAiMessage(messages[value]?.[language] || aiMessage);
   };
 
   const onSubmit = (data: InfoRequestForm) => {
-    setAiMessage("Analyse de ta demande en cours... Nos équipes préparent une réponse personnalisée !");
+    const submitMessages = {
+      fr: "Analyse de ta demande en cours... Nos équipes préparent une réponse personnalisée !",
+      en: "Analyzing your request... Our teams are preparing a personalized response!"
+    };
+    setAiMessage(submitMessages[language]);
     submitMutation.mutate(data);
   };
 

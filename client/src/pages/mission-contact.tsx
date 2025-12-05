@@ -86,7 +86,7 @@ export default function MissionContact() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: ContactForm) => {
-      const response = await apiRequest("POST", "/api/submissions", data);
+      const response = await apiRequest("POST", "/api/submissions", { ...data, language });
       return await response.json() as SubmissionResponse;
     },
     onSuccess: (data) => {
@@ -104,14 +104,20 @@ export default function MissionContact() {
   const handleMessageChange = (value: string) => {
     setCharCount(value.length);
     if (value.length > 200) {
-      setAiMessage("Message détaillé ! Nos équipes apprécient les descriptions complètes.");
+      setAiMessage(language === 'fr'
+        ? "Message détaillé ! Nos équipes apprécient les descriptions complètes."
+        : "Detailed message! Our teams appreciate complete descriptions.");
     } else if (value.length > 50) {
-      setAiMessage("Très bien ! Continue à nous expliquer ta demande.");
+      setAiMessage(language === 'fr'
+        ? "Très bien ! Continue à nous expliquer ta demande."
+        : "Very good! Continue explaining your request.");
     }
   };
 
   const onSubmit = (data: ContactForm) => {
-    setAiMessage("Transmission de ton message vers nos serveurs centraux...");
+    setAiMessage(language === 'fr'
+      ? "Transmission de ton message vers nos serveurs centraux..."
+      : "Transmitting your message to our central servers...");
     submitMutation.mutate(data);
   };
 

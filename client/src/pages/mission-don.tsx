@@ -130,7 +130,7 @@ export default function MissionDon() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: DonationForm) => {
-      const response = await apiRequest("POST", "/api/submissions", data);
+      const response = await apiRequest("POST", "/api/submissions", { ...data, language });
       return await response.json() as SubmissionResponse;
     },
     onSuccess: (data) => {
@@ -366,9 +366,9 @@ export default function MissionDon() {
                         <FormLabel>Fréquence</FormLabel>
                         <div className="flex gap-2">
                           {[
-                            { value: "ponctuel", label: "Ponctuel" },
-                            { value: "mensuel", label: "Mensuel" },
-                            { value: "annuel", label: "Annuel" },
+                            { value: "ponctuel", label: language === 'fr' ? "Ponctuel" : "One-time" },
+                            { value: "mensuel", label: language === 'fr' ? "Mensuel" : "Monthly" },
+                            { value: "annuel", label: language === 'fr' ? "Annuel" : "Yearly" },
                           ].map((freq) => (
                             <Button
                               key={freq.value}

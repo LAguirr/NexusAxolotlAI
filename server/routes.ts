@@ -35,7 +35,8 @@ export async function registerRoutes(
 
       const submission = await storage.createSubmission(submissionData);
 
-      const aiMessage = await generateThankYouMessage(submission);
+      const { language } = req.body;
+      const aiMessage = await generateThankYouMessage(submission, language);
       await storage.updateSubmissionAIMessage(submission.id, aiMessage);
 
       const response = {
